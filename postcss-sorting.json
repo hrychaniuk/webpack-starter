@@ -1,0 +1,9 @@
+{
+  "On Save": true,
+  "properties-order": [
+    "margin",
+    "padding",
+    "border",
+    "background"
+  ]
+}
