@@ -105,16 +105,15 @@ class Observer {
     return this;
   }
 
-  watch() {
+  watch(callback) {
     const me = this;
     const config = this.config;
 
-    return new Promise((res, rej) => {
+    return new Promise((resolve, reject) => {
       try {
         // create the observer
         me.ob = new IntersectionObserver((entries, ob) => {
           entries.forEach(entry => processingObserved.call(me, entry, ob));
-          setTimeout(res.bind(null, me.ob));
           me.init = true;
         }, config);
 
@@ -132,8 +131,11 @@ class Observer {
           me.ob.observe(item);
         });
 
+        resolve(me);
+        if(typeof callback === "function") callback(me);
+
       } catch (e) {
-        rej(errors.GLOBAL_ERROR);
+        reject(errors.GLOBAL_ERROR);
         console.error(e.message);
       }
     });
