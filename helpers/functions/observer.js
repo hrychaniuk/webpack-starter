@@ -28,20 +28,27 @@ const errors = {
   SSR_ERROR: "SSR_MODE_NOT_SUPPORT",
 }
 
+let DEFAULT_OBSERVER_PARAMS = `classes.callback.lazy`;
+
 const defaultParams = {
+  /*
+  **  Nums
+  */
   percentObserve: 0.15,
-  observeClass: "ob",
-  observedClass: 'vis',
   threshold: 0.01,
   /*
-  **  Bool
+  **  Bools
   */
-  returns: false,
+  reverse: false,
   callbackMode: false,
   callbackOnce: false,
   setClassMode: false,
   lazyMode: false,
-
+  /*
+  **  Names
+  */
+  observeClass: "ob",
+  observedClass: 'vis',
   dataAttrObserve: 'observe',
   dataAttrStartValue: '',
   dataAttrCompleteValue: 'vis',
@@ -115,10 +122,10 @@ class Observer {
         me.ob = new IntersectionObserver((entries, ob) => {
           entries.forEach(entry => processingObserved.call(me, entry, ob));
           me.init = true;
+          setTimeout(() => resolve(me));
         }, config);
 
         me.items.forEach(item => {
-
           if(me.params.setClassMode) {
             item.dataset[me.params.dataAttrObserve] = me.params.dataAttrStartValue;
             item.classList.add(me.params.observeClass);
@@ -128,10 +135,10 @@ class Observer {
             item.classList.add(me.params.imgLoadClass);
             item.parentElement.classList.add(me.params.imgWrapLoadClass);
           }
+
           me.ob.observe(item);
         });
 
-        resolve(me);
         if(typeof callback === "function") callback(me);
 
       } catch (e) {
@@ -142,8 +149,8 @@ class Observer {
   }
 
   simple(ref) {
-    if(typeof refs === "string") {
-        refs = document.querySelector(ref);
+    if(typeof ref === "string") {
+        ref = document.querySelector(ref);
     }
 
     this.items.push(ref);
@@ -159,72 +166,75 @@ class Observer {
     return this;
   }
 
+  /*
+  **
+  ** Creating custom observers
+  */
+  
+  static changeDefault(string = DEFAULT_OBSERVER_PARAMS) {
+    DEFAULT_OBSERVER_PARAMS = string;
+    return Observer;
+  }
+
+  static create(string, params = {}) {
+    if(typeof string === "string" && string) {
+      Object.defineProperty(Observer, string, {
+        get: function() {
+          if(typeof params === "string" && params) {
+            return Observer.new`${params}`;
+          }
+          return new Observer(params);
+        },
+      });
+    }
+    return Observer;
+  }
+
   static get default() {
-    return Observer.new`classes.callback.lazy`;
+    return Observer.new`${DEFAULT_OBSERVER_PARAMS}`;
   }
 
-  static get zero() {
-    return Observer.new`zero`;
-  }
-
-  static get infinity() {
-    return Observer.new`infinity`;
-  }
-
-  static get callback() {
-    return Observer.new`callback`;
-  }
-
-  static get callbackOnce() {
-    return Observer.new`callback.once`;
-  }
-
-  static get callbackInfinity() {
-    return Observer.new`callback.infinity`;
-  }
-
-  static get classes() {
-    return Observer.new`classes`;
-  }
-
-  static get lazy() {
-    return Observer.new`lazy`;
+  static get relatives() {
+    return {
+      "zero": [ "percentObserve", 0 ],
+      "reverse": [ "reverse", true ],
+      "callback": [ "callbackMode", true ],
+      "classes": [ "setClassMode", true ],
+      "lazy": [ "lazyMode", true ],
+      "once": [ "callbackOnce", true ],
+    };
   }
 
   static new(strings, ...values) {
-    let str = "";
-    for(let i=0; i<values.length; i++) {
-      str += strings[i];
-      str += values[i];
+    let string = "";
+    for(let i = 0; i < values.length; i++) {
+      string += strings[i];
+      string += values[i];
     }
-    str += strings[strings.length-1];
-    const string = str;
+    string += strings[strings.length - 1];
 
     let errorParams;
-    const relative = {
-      "zero": ["percentObserve", 0],
-      "infinity": ["returns", true],
-      "callback": ["callbackMode", true],
-      "classes": ["setClassMode", true],
-      "lazy": ["lazyMode", true],
-      "once": ["callbackOnce", true],
-    };
-
     const paramsForGet = string.trim().split(".").filter(Boolean);
 
     if(Object.values(paramsForGet).some(i => {
       errorParams = i;
-      return !Object.keys(relative).includes(i);
+      return !Object.keys(Observer.relatives).includes(i);
     })) throw new Error(errors.NOT_VALID_ARGUMENTS.replace('%arg', errorParams));
 
     const settingParams = paramsForGet.reduce((acc, item) => {
-      const [name, value] = relative[item];
+      const [name, value] = Observer.relatives[item];
       acc[name] = value;
       return acc;
     }, {});
+
     return new Observer(settingParams);
   }
-};
+}
+
+Object.keys(Observer.relatives).forEach(i => {
+    Observer.create(i, i);
+});
+
 
 function processingObserved (entry, ob) {
   const me = this;
@@ -252,7 +262,7 @@ function processingObserved (entry, ob) {
           this.dataset.loaded = "1";
           delete this.dataset.lazy;
           this.parentElement.classList.add(me.params.imgWrapLoadComplete);
-        }, {once: true});
+        }, { once: true });
       })();
     }
 
@@ -268,7 +278,7 @@ function processingObserved (entry, ob) {
     }
   }
   else {
-    if (me.params.returns) {
+    if (me.params.reverse) {
 
       if(me.params.setClassMode) {
         target.classList.remove(me.params.observedClass);
@@ -281,23 +291,13 @@ function processingObserved (entry, ob) {
         }));
       }
     } else {
-      /*
-      ** unwatch DOM element after first watching
-      */
       if (me.init && ob) {
-        console.log('unobserve');
         ob.unobserve(target);
       }
     }
   }
 }
 
-/*
-**  Custom configs
-*/
 export { Observer };
-/*
-**  Global observer
-*/
 const defaultObserver = Observer.default;
 export default defaultObserver;
