@@ -2,22 +2,16 @@ import '../styles/index.scss';
 import variables from "root::/variables.config.js";
 import { Observer } from "help::/observer";
 
+const callbackOb = Observer.callback;
 
-const observer = Observer.classes;
-observer.cbs.create("hello", e => {
-  // if(e.visible) alert(e)
+callbackOb.cbs.create("deleteImage", e => {
+  if(e.visible) console.log(e.name)
 });
-observer.cbs.create("deleteImage", e => {
-  // if(e.visible) alert(e)
-});
-
-console.log(observer);
 
 window.addEventListener("load", function(event) {
   document.body.classList.add(Math.random() >= 0.5 ? "yes" : "no");
 
-  observer
-    .collection(document.querySelectorAll("[data-lazy]"))
-    .collection(document.body.children)
+  callbackOb
+    .collection('[data-callback]')
     .watch();
 });

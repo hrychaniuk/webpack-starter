@@ -6,17 +6,20 @@
     opacity: 0.7;
   }
 
-  min-height: 180px;
+  min-height: 200px;
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
 
+  &[data-callback] {
+    outline: 3px solid red;
+  }
+
   &.ob {
     background-color: grey;
     transition: none;
     opacity: 0;
-    transform: translateY(100%);
 
     @media (--sm-plus) {
       opacity: 1;
@@ -28,12 +31,6 @@
     transition: all 0.5s;
     opacity: 1;
     transform: none;
-  }
-}
-
-h2 {
-  &.ob.vis {
-    background-color: #388488;
   }
 }
 
